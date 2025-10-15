@@ -1,2 +1,2 @@
-# Database_Management_Service
-BİL461, HW1
+# BİL461-HW1
+Database Management Service
