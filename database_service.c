@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
         close(fd);
         exit(EXIT_FAILURE);
     }
-    size_t file_size = sb.st_size;
+    off_t file_size = sb.st_size;
     
     // Map the file to memory
     void *mapped_data = mmap(NULL, file_size, PROT_READ, MAP_SHARED, fd, 0);
@@ -160,19 +160,17 @@ void run_extractor(void *shared_memory_addr, off_t start_offset, off_t end_offse
         keyword_lower[i] = tolower(keyword[i]);
     }
     keyword_lower[strlen(keyword)] = '\0';
-
-    size_t keyword_len = strlen(keyword);
     //***********
 
 
     // Line by line keyword detection
     char *data = (char *)shared_memory_addr;
-    char* current_offset_ptr = data + start_offset;
-    char* end_offset_ptr = data + end_offset;
+    off_t current_offset_ptr = (off_t)data + start_offset;
+    off_t end_offset_ptr = (off_t)data + end_offset;
 
     while (current_offset_ptr != end_offset_ptr)
     {
-        if (current_offset_ptr != data + start_offset)
+        if (current_offset_ptr != (off_t)data + start_offset)
         {
             current_offset_ptr++; // To skip the '\n' char
         }
@@ -242,7 +240,7 @@ void run_reporter(const char *output_file) {
     char *wc_args[] = {
         "wc",
         "-l",
-        output_file,
+        (char *)output_file,
         NULL
     };
     execvp("wc", wc_args);

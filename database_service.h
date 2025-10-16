@@ -10,9 +10,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <string.h>
 #include <errno.h>
+#include <ctype.h>
 
 // Constants
 #define MAX_KEYWORD_LENGTH 64
 #define MAX_LINE_LENGTH 128
+
+#endif // DATABASE_SERVICE_H
