@@ -164,7 +164,7 @@ void run_extractor(void *shared_memory_addr, off_t start_offset, off_t end_offse
     while (current_offset_ptr < end_offset_ptr)
     {
         const char *line_start = current_offset_ptr;
-        while (current_offset_ptr != '\n' && current_offset_ptr < end_offset_ptr)
+        while (*current_offset_ptr != '\n' && current_offset_ptr < end_offset_ptr)
         {
             current_offset_ptr++;
         }
@@ -189,7 +189,7 @@ void run_extractor(void *shared_memory_addr, off_t start_offset, off_t end_offse
             write(pipe_write, original_buffer, line_length + 1);
         }
 
-        if (current_offset_ptr == '\n' && current_offset_ptr < end_offset_ptr)
+        if (*current_offset_ptr == '\n' && current_offset_ptr < end_offset_ptr)
         {
             current_offset_ptr++;
         }   
