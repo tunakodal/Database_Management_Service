@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
     size_t file_size = sb.st_size;
     
     // Map the file to memory
-    void *mapped_data = mmap(NULL, file_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    void *mapped_data = mmap(NULL, file_size, PROT_READ, MAP_SHARED, fd, 0);
     if (mapped_data == MAP_FAILED) {
         perror("Error mapping the file");
         close(fd);
@@ -62,6 +62,8 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    char *data = (char *)mapped_data;
+
 
     for (int i = 0; i < num_of_workers; i++) {
 
@@ -70,7 +72,7 @@ int main(int argc, char *argv[]) {
 
         if (i != 0) // Adjusting the start offset in order to prevent line interruption 
         {
-            while (mapped_data[start_offset] != '\n' && start_offset != file_size) {
+            while (data[start_offset] != '\n' && start_offset != file_size) {
                 start_offset++;
             }
             start_offset++; // Starting by the "char" after the '\n'
@@ -78,7 +80,7 @@ int main(int argc, char *argv[]) {
             
         if (i != (num_of_workers - 1))
         {
-            while (mapped_data[end_offset] != '\n' && end_offset != file_size){
+            while (data[end_offset] != '\n' && end_offset != file_size){
                 end_offset++;
             }
             // Ending by the "char", '\n'
@@ -157,37 +159,40 @@ void run_extractor(void *shared_memory_addr, off_t start_offset, off_t end_offse
     for (size_t i = 0; i < strlen(keyword); i++) {
         keyword_lower[i] = tolower(keyword[i]);
     }
+    keyword_lower[strlen(keyword)] = '\0';
 
     size_t keyword_len = strlen(keyword);
     //***********
 
 
     // Line by line keyword detection
-    off_t current_offset = shared_memory_addr + start_offset;
+    char *data = (char *)shared_memory_addr;
+    char* current_offset_ptr = data + start_offset;
+    char* end_offset_ptr = data + end_offset;
 
-    while (current_offset != end_offset)
+    while (current_offset_ptr != end_offset_ptr)
     {
-        if (current_offset != shared_memory_addr + start_offset)
+        if (current_offset_ptr != data + start_offset)
         {
-            current_offset++; // To skip the '\n' char
+            current_offset_ptr++; // To skip the '\n' char
         }
         
         char tampon[MAX_LINE_LENGTH];
         char tampon_unlowered[MAX_LINE_LENGTH];
 
         size_t size_of_line = 1;
-        while (shared_memory_addr[current_offset] != '\n')
+        while (data[current_offset_ptr] != '\n')
         {
             size_of_line++;
-            current_offset++;
+            current_offset_ptr++;
         }
 
         for (size_t i = 0; i < size_of_line; i++)
         {
-            tampon[i] = tolower(shared_memory_addr[current_offset - size_of_line + i]);
-            tampon_unlowered[i] = shared_memory_addr[current_offset - size_of_line + i];
+            tampon[i] = tolower((unsigned char)data[current_offset_ptr - size_of_line + i]);
+            tampon_unlowered[i] = data[current_offset_ptr - size_of_line + i];
         }
-        tampon[size_of_line] = '\0'
+        tampon[size_of_line] = '\0';
 
         if (strstr(tampon, keyword_lower) != NULL){
             write(pipe_write, tampon_unlowered, size_of_line);
@@ -222,7 +227,6 @@ void run_sorter(int pipe_read, const char *output_file) {
     char *sort_args[] = {
         "sort",     
         "-k5,5",     
-        "-t ' '",      
         NULL       
     };
 
@@ -231,9 +235,6 @@ void run_sorter(int pipe_read, const char *output_file) {
         perror("Error executing sort");
         exit(EXIT_FAILURE);
     }
-
-    perror("Execvp failed");
-    exit(EXIT_FAILURE);
 }
 
 void run_reporter(const char *output_file) {
