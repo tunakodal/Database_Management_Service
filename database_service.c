@@ -183,6 +183,7 @@ void run_extractor(void *shared_memory_addr, off_t start_offset, off_t end_offse
         }
 
         lowered_buffer[line_length] = '\0';
+        original_buffer[line_length] = '\n'; // Adding the '\n' back to the original line
 
         if (strstr(lowered_buffer, keyword_lower))
         {
@@ -221,7 +222,7 @@ void run_sorter(int pipe_read, const char *output_file) {
     
     char *sort_args[] = {
         "sort",     
-        "-k5,5",     
+        "-k5,5n",     
         NULL       
     };
 
