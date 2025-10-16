@@ -157,12 +157,16 @@ void run_extractor(void *shared_memory_addr, off_t start_offset, off_t end_offse
 
 
     // Line by line keyword detection
+
+    //Pointers to navigate through the shared memory
     char *data = (char *)shared_memory_addr;
     char *current_offset_ptr = data + start_offset;
     char *end_offset_ptr = data + end_offset;
+    
 
     while (current_offset_ptr < end_offset_ptr)
     {
+        // Line extraction
         const char *line_start = current_offset_ptr;
         while (*current_offset_ptr != '\n' && current_offset_ptr < end_offset_ptr)
         {
@@ -173,6 +177,8 @@ void run_extractor(void *shared_memory_addr, off_t start_offset, off_t end_offse
 
         size_t line_length = line_end - line_start;
 
+        // Lowering the line for case insensivity
+        // Also creating a copy of the original line to write to the pipe (Assumed that lines are not longer than MAX_LINE_LENGTH)
         char lowered_buffer[MAX_LINE_LENGTH];
         char original_buffer[MAX_LINE_LENGTH];
         for (size_t i = 0; i < line_length; i++)
@@ -225,7 +231,8 @@ void run_sorter(int pipe_read, const char *output_file) {
         "-k5,5n",     
         NULL       
     };
-
+    
+    // Execute sort
     if (execvp("sort", sort_args) == -1)
     {
         perror("Error executing sort");
@@ -234,13 +241,15 @@ void run_sorter(int pipe_read, const char *output_file) {
 }
 
 void run_reporter(const char *output_file) {
-    
+
     char *wc_args[] = {
         "wc",
         "-l",
         (char *)output_file,
         NULL
     };
+
+    // Execute wc
     execvp("wc", wc_args);
     perror("Error executing wc");
     exit(EXIT_FAILURE);
