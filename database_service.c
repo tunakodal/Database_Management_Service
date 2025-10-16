@@ -1,11 +1,4 @@
 #include "database_service.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
-#include <sys/wait.h> 
 
 void run_extractor(void *shared_memory_addr, off_t start_offset, off_t end_offset, const char *keyword, int pipe_write);
 void run_sorter(int pipe_read, const char *output_file);
@@ -165,38 +158,42 @@ void run_extractor(void *shared_memory_addr, off_t start_offset, off_t end_offse
 
     // Line by line keyword detection
     char *data = (char *)shared_memory_addr;
-    off_t current_offset_ptr = (off_t)data + start_offset;
-    off_t end_offset_ptr = (off_t)data + end_offset;
+    char *current_offset_ptr = data + start_offset;
+    char *end_offset_ptr = data + end_offset;
 
-    while (current_offset_ptr != end_offset_ptr)
+    while (current_offset_ptr < end_offset_ptr)
     {
-        if (current_offset_ptr != (off_t)data + start_offset)
+        const char *line_start = current_offset_ptr;
+        while (current_offset_ptr != '\n' && current_offset_ptr < end_offset_ptr)
         {
-            current_offset_ptr++; // To skip the '\n' char
-        }
-        
-        char tampon[MAX_LINE_LENGTH];
-        char tampon_unlowered[MAX_LINE_LENGTH];
-
-        size_t size_of_line = 1;
-        while (data[current_offset_ptr] != '\n')
-        {
-            size_of_line++;
             current_offset_ptr++;
         }
 
-        for (size_t i = 0; i < size_of_line; i++)
-        {
-            tampon[i] = tolower((unsigned char)data[current_offset_ptr - size_of_line + i]);
-            tampon_unlowered[i] = data[current_offset_ptr - size_of_line + i];
-        }
-        tampon[size_of_line] = '\0';
+        const char *line_end = current_offset_ptr; //without '\n'
 
-        if (strstr(tampon, keyword_lower) != NULL){
-            write(pipe_write, tampon_unlowered, size_of_line);
+        size_t line_length = line_end - line_start;
+
+        char lowered_buffer[MAX_LINE_LENGTH];
+        char original_buffer[MAX_LINE_LENGTH];
+        for (size_t i = 0; i < line_length; i++)
+        {
+            unsigned char c = (unsigned char)line_start[i];
+            lowered_buffer[i] = (char)tolower(c);
+            original_buffer[i] = (char)c;
         }
+
+        lowered_buffer[line_length] = '\0';
+
+        if (strstr(lowered_buffer, keyword_lower))
+        {
+            write(pipe_write, original_buffer, line_length + 1);
+        }
+
+        if (current_offset_ptr == '\n' && current_offset_ptr < end_offset_ptr)
+        {
+            current_offset_ptr++;
+        }   
     }
-    
 }
 
 void run_sorter(int pipe_read, const char *output_file) {
