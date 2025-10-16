@@ -14,4 +14,5 @@
 #include <errno.h>
 
 // Constants
-#define BUFFER_SIZE 1024   
+#define MAX_KEYWORD_LENGTH 64
+#define MAX_LINE_LENGTH 128

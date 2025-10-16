@@ -1,4 +1,4 @@
-// #include "database_service.h"
+#include "database_service.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
 void run_extractor(void *shared_memory_addr, off_t start_offset, off_t end_offset, const char *keyword, int pipe_write) {
 
     //*********** Keyword lowering for case insensivity
-    char keyword_lower[64];
+    char keyword_lower[MAX_KEYWORD_LENGTH];
     for (size_t i = 0; i < strlen(keyword); i++) {
         keyword_lower[i] = tolower(keyword[i]);
     }
@@ -172,8 +172,8 @@ void run_extractor(void *shared_memory_addr, off_t start_offset, off_t end_offse
             current_offset++; // To skip the '\n' char
         }
         
-        char *tampon[128];
-        char *tampon_unlowered[128];
+        char tampon[MAX_LINE_LENGTH];
+        char tampon_unlowered[MAX_LINE_LENGTH];
 
         size_t size_of_line = 1;
         while (shared_memory_addr[current_offset] != '\n')
