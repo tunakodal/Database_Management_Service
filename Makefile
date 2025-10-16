@@ -9,6 +9,5 @@ $(TARGET): $(SOURCES) $(HEADERS)
 
 clean:
 	rm -f $(TARGET)
-	# Eğer test dosyalarınız varsa (örneğin output.txt) buraya ekleyebilirsiniz.
-
+	
 .PHONY: clean
